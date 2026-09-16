@@ -1,5 +1,5 @@
-# HiFi Linear PSU Sim
+# HiFi linear PSU simulator
 
-Audio HiFi linear power-supply dimensioning + web simulation (RLC, regulators, diode/tube/IC rectifiers).
+Audio HiFi linear power-supply dimensioning and web simulation (RLC, regulators, diode / tube / IC rectifiers).
 
-Scaffold and app code land via pull requests. Electrical models are owned by Circuit Designer.
+Scaffolding in progress — web UI coming via cloud agent.
