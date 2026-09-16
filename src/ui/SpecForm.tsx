@@ -55,7 +55,7 @@ export function SpecForm({ spec, onChange, onRecommend }: Props) {
             value={spec.rippleUnit}
             onChange={(e) => set({ rippleUnit: e.target.value as SpecInput["rippleUnit"] })}
           >
-            <option value="mVpp">mV peak-to-peak</option>
+            <option value="mVpp">mVpp</option>
             <option value="percent">% of Vout</option>
           </select>
         </div>
