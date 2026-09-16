@@ -56,6 +56,13 @@ describe("peak clamp + LM74610 modeled path", () => {
     ).toBe(true);
     expect(
       isPeakClampWarning({
+        level: "warn",
+        message:
+          "Rectifier peak current hits the 0.75 A clamp (unclamped desire 2.10 A). Rule of thumb, not SPICE.",
+      }),
+    ).toBe(true);
+    expect(
+      isPeakClampWarning({
         level: "error",
         message: "5AR4 / GZ34 is rated 0.25 A DC; load is 1 A.",
       }),

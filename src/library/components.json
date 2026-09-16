@@ -15,6 +15,7 @@
       "diodesInPath": 2,
       "iAvgMax_A": 1.0,
       "iPeakMax_A": 30.0,
+      "iFsm_A": 30.0,
       "vRrm_V": 1000
     },
     {
@@ -31,6 +32,7 @@
       "diodesInPath": 2,
       "iAvgMax_A": 3.0,
       "iPeakMax_A": 200.0,
+      "iFsm_A": 200.0,
       "vRrm_V": 1000
     },
     {
@@ -47,6 +49,7 @@
       "diodesInPath": 2,
       "iAvgMax_A": 8.0,
       "iPeakMax_A": 300.0,
+      "iFsm_A": 300.0,
       "vRrm_V": 1000
     },
     {
@@ -63,6 +66,7 @@
       "diodesInPath": 2,
       "iAvgMax_A": 35.0,
       "iPeakMax_A": 400.0,
+      "iFsm_A": 400.0,
       "vRrm_V": 600
     },
     {
@@ -79,6 +83,7 @@
       "diodesInPath": 2,
       "iAvgMax_A": 3.0,
       "iPeakMax_A": 80.0,
+      "iFsm_A": 80.0,
       "vRrm_V": 40
     }
   ],

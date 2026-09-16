@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { rectifierDropAt, reservoirRipplePp } from "./analytics";
+import {
+  analyticEstimate,
+  chargingPathOhms,
+  rectifierDropAt,
+  reservoirRipplePp,
+  seriesResistance,
+  transformerRs,
+} from "./analytics";
 import { rectifierModel } from "../library";
 import { findRectifier } from "../library";
+import { defaultSpec, recommend } from "./recommend";
 
 describe("reservoirRipplePp", () => {
   it("matches I / (2 f C) for full-wave 50 Hz", () => {
@@ -42,5 +50,45 @@ describe("rectifierDropAt", () => {
     const ic = rectifierModel(findRectifier("lt4320"));
     const d = rectifierDropAt(ic, 1);
     expect(d).toBeLessThan(0.05);
+  });
+});
+
+describe("Rd consistency (analytic vs drop helper)", () => {
+  it("vfTotal matches rectifierDropAt and does not add Rd again into winding IR", () => {
+    const spec = defaultSpec();
+    spec.iload = 1;
+    spec.vsecRms = 18;
+    const arch = recommend(spec, "1n4007");
+    const model = rectifierModel(findRectifier("1n4007"));
+    const a = analyticEstimate(spec, arch, model, 18);
+
+    expect(a.vfTotal).toBeCloseTo(rectifierDropAt(model, spec.iload), 10);
+    expect(model.rd).toBeGreaterThan(0.05);
+
+    const rsX = transformerRs(18, spec.iload, spec.transformerRegulation);
+    expect(a.xfmrDrop).toBeCloseTo(spec.iload * rsX * 0.5, 10);
+    // Old bug: rs = rsX + model.rd made xfmrDrop include another 0.5·I·Rd.
+    expect(a.xfmrDrop).toBeLessThan(spec.iload * (rsX + model.rd) * 0.5 - 1e-9);
+
+    const rCharge = chargingPathOhms(model, rsX, 0.04);
+    expect(rCharge).toBeCloseTo(rsX + model.rd + 0.04, 10);
+    expect(rCharge).not.toBeCloseTo(rsX + model.rd * 0.25 + 0.04, 3);
+  });
+
+  it("seriesResistance omits capacitor ESR (ripple path, not DC IR)", () => {
+    const spec = defaultSpec();
+    const arch = recommend(spec, "kbu8m");
+    const esrSum = arch.stages
+      .filter((s) => s.type === "cap")
+      .reduce((sum, s) => (s.type === "cap" ? sum + s.ESR_ohm : sum), 0);
+    const rDc = seriesResistance(arch.stages);
+    expect(esrSum).toBeGreaterThan(0);
+    const rAndDcr = arch.stages.reduce((sum, s) => {
+      if (s.type === "resistor") return sum + s.R_ohm;
+      if (s.type === "choke") return sum + s.DCR_ohm;
+      return sum;
+    }, 0);
+    expect(rDc).toBeCloseTo(rAndDcr, 10);
+    expect(rDc).toBeLessThan(rAndDcr + esrSum);
   });
 });
