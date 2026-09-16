@@ -30,6 +30,22 @@ export function ResultsPanel({
           <span className="k">Vsec used</span>
           <span className="v">{fmt(metrics.vsecUsed, 2, "Vrms")}</span>
         </div>
+        <div className="metric" title="Cap-input rule of thumb (~1.8× Idc), not SPICE">
+          <span className="k">Isec (rms est.)</span>
+          <span className="v">{fmt(metrics.iSecRms, 2, "A")}</span>
+        </div>
+        <div
+          className="metric"
+          title={
+            tubeRectifier
+              ? "2 × Vsec × Isec_rms (FW-CT half-windings). Rule of thumb, not SPICE."
+              : "Vsec × Isec_rms. Rule of thumb, not SPICE."
+          }
+        >
+          <span className="k">Transformer VA</span>
+          <span className="v">{fmt(metrics.transformerVa, 0, "VA")}</span>
+          {tubeRectifier && <span className="metric-note">2× half-winding</span>}
+        </div>
         <div className="metric">
           <span className="k">Raw Vdc (avg)</span>
           <span className="v">{fmt(metrics.vPreRegAvg, 2, "V")}</span>
@@ -68,10 +84,12 @@ export function ResultsPanel({
       )}
       <p className="analytic-note">
         Hand estimate (not the time-domain sim): Vpeak {fmt(analytic.vPeak, 2, "V")}, rectifier drop{" "}
-        {fmt(analytic.vfTotal, 2, "V")}, reservoir ripple {fmtMv(analytic.reservoirRipplePp)}pp,
-        series IR {fmt(analytic.seriesDrop, 2, "V")}. Dropout modelled as{" "}
-        {fmt(metrics.dropout, 2, "V")}. Raw valley {fmt(metrics.vPreRegMin, 2, "V")} / peak{" "}
-        {fmt(metrics.vPreRegMax, 2, "V")}.
+        {fmt(analytic.vfTotal, 2, "V")} (Vf0+Rd·I), winding IR {fmt(analytic.xfmrDrop, 2, "V")},
+        reservoir ripple {fmtMv(analytic.reservoirRipplePp)}pp, series IR{" "}
+        {fmt(analytic.seriesDrop, 2, "V")} (CRC R/DCR only; cap ESR is not DC drop). Isec(rms){" "}
+        {fmt(analytic.iSecRms, 2, "A")}, VA {fmt(analytic.transformerVa, 0, "VA")}. Dropout modelled
+        as {fmt(metrics.dropout, 2, "V")}. First-cap peak {fmt(metrics.vFirstCapMax, 2, "V")}; raw
+        valley {fmt(metrics.vPreRegMin, 2, "V")} / peak {fmt(metrics.vPreRegMax, 2, "V")}.
       </p>
       {metrics.warnings.length > 0 && (
         <div className="warnings">

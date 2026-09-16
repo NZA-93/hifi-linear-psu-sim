@@ -75,6 +75,8 @@ export interface DiodePart {
   diodesInPath: number;
   iAvgMax_A: number;
   iPeakMax_A: number;
+  /** Non-repetitive surge (IFSM), datasheet value when known. */
+  iFsm_A?: number;
   vRrm_V: number;
 }
 
@@ -91,6 +93,7 @@ export interface TubePart {
   rd_ohm: number;
   iAvgMax_A: number;
   iPeakMax_A: number;
+  iFsm_A?: number;
   vRrm_V: number;
   cinMax_uF: number;
   heater_V: number;
@@ -110,6 +113,7 @@ export interface IcRectifierPart {
   rd_ohm: number;
   iAvgMax_A: number;
   iPeakMax_A: number;
+  iFsm_A?: number;
   vRrm_V: number;
 }
 
@@ -191,7 +195,10 @@ export interface RectifierModel {
   iPeakMax: number;
   iDcMax: number;
   vRrm: number;
+  /** Datasheet IFSM when known; otherwise callers map from iPeakMax. */
+  iFsm?: number;
   cinMax_uF?: number;
+  heater_W?: number;
 }
 
 export interface Warning {
@@ -222,6 +229,14 @@ export interface SimMetrics {
   efficiency: number;
   transformerRs_ohm: number;
   vsecUsed: number;
+  /** Cap-input rule of thumb: ~1.8× Idc. */
+  iSecRms: number;
+  /** Vsec × Isec_rms (tube FW-CT: 2× half-winding). */
+  transformerVa: number;
+  vFirstCapMax: number;
+  iPeak: number;
+  iPeakUnclamped: number;
+  heaterOmitted_W: number;
   warnings: Warning[];
 }
 
@@ -247,5 +262,8 @@ export interface AnalyticEstimate {
   reservoirRipplePp: number;
   vdcLoaded: number;
   seriesDrop: number;
+  xfmrDrop: number;
   rippleOutEstimate: number;
+  iSecRms: number;
+  transformerVa: number;
 }

@@ -48,7 +48,9 @@ export function rectifierModel(part: RectifierPart): RectifierModel {
     iPeakMax: part.iPeakMax_A,
     iDcMax: part.iAvgMax_A,
     vRrm: part.vRrm_V,
+    iFsm: part.iFsm_A,
     cinMax_uF: "cinMax_uF" in part ? part.cinMax_uF : undefined,
+    heater_W: "heater_V" in part ? part.heater_V * part.heater_A : undefined,
   };
 }
 

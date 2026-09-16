@@ -10,11 +10,18 @@ import type {
 import { findRegulator } from "../library";
 import {
   analyticEstimate,
+  chargingPathOhms,
+  firstCapEsr,
+  IFSM_WARN_FRACTION,
+  ifsmAmps,
   modelFromArch,
   rectifierDropAt,
+  rectifierReversePeak,
   rippleTargetVolts,
   secondaryRms,
   transformerRs,
+  VRRM_ERROR_FRACTION,
+  VRRM_WARN_FRACTION,
 } from "./analytics";
 import { suggestedSecondary } from "./recommend";
 
@@ -90,13 +97,26 @@ export function resolveVsec(spec: SpecInput, rectifierId: string): number {
   return suggestedSecondary(spec, rectifierId);
 }
 
+function capNodeIndex(stages: FilterStage[], capId: string): number {
+  let nodeIdx = 0;
+  for (const s of stages) {
+    if (s.type === "regulator") break;
+    if (s.type === "cap") {
+      if (s.id === capId) return nodeIdx;
+    } else {
+      nodeIdx += 1;
+    }
+  }
+  return 0;
+}
+
 export function simulate(spec: SpecInput, arch: Architecture): SimResult {
   const model = modelFromArch(arch);
   const vsec = resolveVsec(spec, arch.rectifierId);
   const analytic = analyticEstimate(spec, arch, model, vsec);
   const ladder = buildLadder(arch.stages);
   const rsX = transformerRs(vsec, spec.iload, spec.transformerRegulation);
-  const rs = Math.max(rsX + model.rd * 0.25, 0.02);
+  const rCharge = chargingPathOhms(model, rsX, ladder.nodes[0]?.esr ?? firstCapEsr(arch.stages));
 
   const f = spec.mainsHz;
   const cycles = 14;
@@ -129,16 +149,31 @@ export function simulate(spec: SpecInput, arch: Architecture): SimResult {
   let vOutMin = Infinity;
   let vOutMax = -Infinity;
   let iPeakSeen = 0;
+  let iPeakUnclamped = 0;
+  let iPeakFirstCycle = 0;
+  const vNodeMax = ladder.nodes.map(() => -Infinity);
   let firstCap = ladder.nodes[0].C;
+
+  // Empty-C first-cycle inrush (order-of-magnitude; sim itself warm-starts at analytic Vdc).
+  const iInrushUnclamped = Math.max(0, (vPeak - model.vf0) / rCharge);
+  iPeakUnclamped = iInrushUnclamped;
+  iPeakFirstCycle = iInrushUnclamped;
+
+  let vPreMean = Math.max(analytic.vdcLoaded, 0);
+  let vPreCycleSum = 0;
+  let stepsInCycle = 0;
 
   for (let k = 0; k < nSteps; k++) {
     const t = k * dt;
     const vIdeal = Math.abs(vPeak * Math.sin(omega * t));
     const vTh = Math.max(0, vIdeal - model.vf0);
 
-    let iRect = (vTh - v[0]) / (rs + ladder.nodes[0].esr);
-    if (iRect < 0) iRect = 0;
+    let iDesire = (vTh - v[0]) / rCharge;
+    if (iDesire < 0) iDesire = 0;
+    let iRect = iDesire;
     if (iRect > model.iPeakMax) iRect = model.iPeakMax;
+    iPeakUnclamped = Math.max(iPeakUnclamped, iDesire);
+    if (k < stepsPerCycle) iPeakFirstCycle = Math.max(iPeakFirstCycle, iDesire);
 
     for (let i = 0; i < ladder.series.length; i++) {
       const arm = ladder.series[i];
@@ -157,10 +192,19 @@ export function simulate(spec: SpecInput, arch: Architecture): SimResult {
       iLoadPre = spec.iload + iq;
       const ceiling = vPre - dropout;
       if (ceiling >= vset) {
-        vOut = vset + (vPre - vset - dropout) * psrrLin;
+        // PSRR is AC-only: DC headroom must not lift Vout above Vset.
+        vOut = vset + (vPre - vPreMean) * psrrLin;
       } else {
         vOut = Math.max(0, ceiling);
       }
+    }
+
+    vPreCycleSum += vPre;
+    stepsInCycle += 1;
+    if (stepsInCycle >= stepsPerCycle) {
+      vPreMean = vPreCycleSum / stepsInCycle;
+      vPreCycleSum = 0;
+      stepsInCycle = 0;
     }
 
     for (let n = 0; n < v.length; n++) {
@@ -172,6 +216,7 @@ export function simulate(spec: SpecInput, arch: Architecture): SimResult {
       v[n] += (iCap * dt) / ladder.nodes[n].C;
       if (!Number.isFinite(v[n]) || v[n] > 1e5) v[n] = Math.min(Math.max(v[n] || 0, 0), 1e5);
       if (v[n] < 0) v[n] = 0;
+      vNodeMax[n] = Math.max(vNodeMax[n], v[n]);
     }
     for (let i = 0; i < iS.length; i++) {
       if (!Number.isFinite(iS[i]) || Math.abs(iS[i]) > 1e4) iS[i] = Math.sign(iS[i] || 0) * 1e4;
@@ -213,20 +258,57 @@ export function simulate(spec: SpecInput, arch: Architecture): SimResult {
   const pOut = spec.vout * spec.iload;
   const headroomMin = (regPart ? vPreMin - dropout : vPreMin) - vset;
   const inRegulation = !regPart || vPreMin >= vset + dropout;
+  const vFirstCapMax = vNodeMax[0] ?? vPreMax;
+  const heaterOmitted_W = model.heater_W ?? 0;
 
   const warnings: Warning[] = [];
+  warnings.push({
+    level: "warn",
+    message:
+      model.kind === "tube-fwct"
+        ? `Isec(rms) ≈ 1.8×Idc = ${analytic.iSecRms.toFixed(2)} A per half-winding; transformer VA ≈ ${analytic.transformerVa.toFixed(0)} VA (2×Vsec×Isec_rms for FW-CT). Rule of thumb for cap-input sizing, not SPICE.`
+        : `Isec(rms) ≈ 1.8×Idc = ${analytic.iSecRms.toFixed(2)} A; transformer VA ≈ ${analytic.transformerVa.toFixed(0)} VA (Vsec×Isec_rms). Rule of thumb for cap-input sizing, not SPICE.`,
+  });
+
   if (spec.iload > model.iDcMax) {
     warnings.push({
       level: "error",
       message: `${model.label} is rated ${model.iDcMax} A DC; load is ${spec.iload} A.`,
     });
   }
-  if (iPeakSeen > model.iPeakMax * 0.98) {
+
+  const { iFsm, mappedFromPeakClamp } = ifsmAmps(model);
+  if (iPeakFirstCycle >= IFSM_WARN_FRACTION * iFsm) {
+    const mapped =
+      mappedFromPeakClamp
+        ? " IFSM mapped from the library peak-current rating (datasheet IFSM not entered separately)."
+        : "";
     warnings.push({
       level: "warn",
-      message: `Rectifier peak current hits the ${model.iPeakMax} A clamp (saw ${iPeakSeen.toFixed(2)} A).`,
+      message: `First-cycle peak ${iPeakFirstCycle.toFixed(2)} A is ≥ 70% of IFSM (${iFsm} A).${mapped} Rule of thumb, not SPICE.`,
     });
   }
+
+  if (iPeakUnclamped >= model.iPeakMax) {
+    warnings.push({
+      level: "warn",
+      message: `Rectifier peak current hits the ${model.iPeakMax} A clamp (unclamped desire ${iPeakUnclamped.toFixed(2)} A). Rule of thumb, not SPICE.`,
+    });
+  }
+
+  const vReverse = rectifierReversePeak(model.kind, vPeak);
+  if (vReverse >= VRRM_ERROR_FRACTION * model.vRrm) {
+    warnings.push({
+      level: "error",
+      message: `Rectified peak ${vReverse.toFixed(1)} V is ≥ 90% of VRRM (${model.vRrm} V) for ${model.label}.`,
+    });
+  } else if (vReverse >= VRRM_WARN_FRACTION * model.vRrm) {
+    warnings.push({
+      level: "warn",
+      message: `Rectified peak ${vReverse.toFixed(1)} V is ≥ 70% of VRRM (${model.vRrm} V) for ${model.label}. Rule of thumb, not SPICE.`,
+    });
+  }
+
   if (model.cinMax_uF !== undefined && firstCap > (model.cinMax_uF + 1) * 1e-6) {
     warnings.push({
       level: "warn",
@@ -251,6 +333,10 @@ export function simulate(spec: SpecInput, arch: Architecture): SimResult {
       message:
         "Tube rectifier secondary is RMS per anode (each side of a centre tap). These valves are HV parts — a 12 V / 1 A rail is outside their design space.",
     });
+    warnings.push({
+      level: "warn",
+      message: `Efficiency omits heater power (${heaterOmitted_W.toFixed(1)} W for ${model.label}). Rule of thumb, not SPICE.`,
+    });
   }
   for (const s of arch.stages) {
     if (s.type === "choke" && spec.iload > s.Imax_A) {
@@ -268,11 +354,18 @@ export function simulate(spec: SpecInput, arch: Architecture): SimResult {
         });
       }
     }
-    if (s.type === "cap" && vPreMax > s.Vdc_V) {
-      warnings.push({
-        level: "error",
-        message: `Cap ${s.partId} is ${s.Vdc_V} V; simulated peak ${vPreMax.toFixed(1)} V.`,
-      });
+    if (s.type === "cap") {
+      const node = capNodeIndex(arch.stages, s.id);
+      const peak = vNodeMax[node] ?? vFirstCapMax;
+      const isFirst = arch.stages.find((x) => x.type === "cap")?.id === s.id;
+      if (peak > s.Vdc_V) {
+        warnings.push({
+          level: "error",
+          message: isFirst
+            ? `First capacitor ${s.partId} is ${s.Vdc_V} V; first-node peak ${peak.toFixed(1)} V.`
+            : `Cap ${s.partId} is ${s.Vdc_V} V; simulated peak ${peak.toFixed(1)} V.`,
+        });
+      }
     }
     if (s.type === "regulator" && spec.iload > findRegulator(s.partId).iMax_A) {
       warnings.push({
@@ -305,6 +398,12 @@ export function simulate(spec: SpecInput, arch: Architecture): SimResult {
     efficiency: pOut / (pOut + pHeat),
     transformerRs_ohm: rsX,
     vsecUsed: vsec,
+    iSecRms: analytic.iSecRms,
+    transformerVa: analytic.transformerVa,
+    vFirstCapMax,
+    iPeak: iPeakSeen,
+    iPeakUnclamped,
+    heaterOmitted_W,
     warnings,
   };
 

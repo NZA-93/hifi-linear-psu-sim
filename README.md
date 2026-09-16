@@ -51,13 +51,27 @@ npm run build
 
 ## What the model does
 
-1. **Transformer** — secondary RMS (typed in, from Ns/Np × mains, or auto-picked). A single winding resistance from a %-regulation slider. No magnetizing branch, no leakage L.
+1. **Transformer** — secondary RMS (typed in, from Ns/Np × mains, or auto-picked). A single winding resistance from a %-regulation slider. No magnetizing branch, no leakage L. Sizing uses a cap-input rule of thumb **Isec_rms ≈ 1.8× Idc** and **VA = Vsec × Isec_rms** (tube FW-CT: **2×** half-winding contribution). Those numbers are labelled as a rule of thumb, not SPICE.
 2. **Rectifier**
-   - Silicon bridge: two diode drops `2·(Vf0 + Rd·I)`, full-wave `|sin|`.
+   - Silicon bridge: two diode drops `2·(Vf0 + Rd·I)`, full-wave `|sin|`. `rectifierModel` already scales vf0/rd by `diodesInPath`.
    - Tube FW-CT (5AR4/GZ34, 5U4G, EZ81): large Vf0 + tens of ohms, peak-current clamp, typical Cin max. **Secondary is RMS per anode** (each side of a centre tap).
    - IC ideal-diode (LT4320, LM74610-Q1): near-zero Vf, drop ≈ I·Rds(on) of the example MOSFET path.
+   - One Rd: analytic `vfTotal = rectifierDropAt` (Vf0+Rd·I). Time-domain conduction uses **full-path Rd** with transformer Rs and first-cap ESR. Analytic loaded Vdc does **not** add Rd a second time, and does **not** treat capacitor ESR as DC series IR (ESR is a ripple/stepper path).
 3. **Filter ladder** — shunt C and series R or L, implicit-Euler step of capacitor voltages / inductor currents, ~800 samples per mains cycle, last two cycles scored.
-4. **Regulator** — dropout + PSRR attenuation while in regulation; heat ≈ (Vin − Vout)·Iload.
+4. **Regulator** — dropout while in regulation; **PSRR is AC-only** (`vOut ≈ vset + (vPre − meanPre)·10^(−PSRR_dB/20)`). DC headroom does not lift the DC output. Below dropout the rail still collapses to `vPre − dropout`.
+
+### Warn / error thresholds (order-of-magnitude, not SPICE)
+
+Messages say **rule of thumb, not SPICE**. Analytic Vdc/ripple is a **hand estimate**; the time-domain stepper is still not a SPICE deck.
+
+| Check | Warn | Error |
+| --- | --- | --- |
+| **Isec / VA** | Always shown (1.8× Idc; tube VA = 2×Vsec×Isec). | — |
+| **Inrush / IFSM** | First-cycle (empty-C) peak ≥ 0.7× IFSM. Silicon JSON has datasheet `iFsm_A`; tubes/ICs map from `iPeakMax` with a note. | — |
+| **Peak clamp** | Unclamped charging current would hit `iPeakMax`. | — |
+| **VRRM** | Rectified peak ≥ 0.7× VRRM (bridge: Vsec peak; FW-CT: 2× that). Important for 1N5822 (40 V). | ≥ 0.9× VRRM |
+| **C1 voltage** | — | First capacitor vs **first-node** peak, not vPre after CRC. |
+| **Tube heater** | Efficiency omits heater watts. | — |
 
 ### Limitations (not SPICE)
 
