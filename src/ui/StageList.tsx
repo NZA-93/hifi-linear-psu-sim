@@ -7,6 +7,21 @@ import {
   regulatorStageFrom,
   resistorStageFrom,
 } from "../sim/recommend";
+import {
+  capacitorOptionLabel,
+  chokeOptionLabel,
+  isPlaceholderPart,
+  rectifierOptionLabel,
+  regulatorOptionLabel,
+  resistorOptionLabel,
+} from "./catalogLabels";
+import {
+  IC_IDEAL_GLOSS,
+  MODELED_LOW_DROP_BADGE,
+  isModeledLowDropPath,
+  rectifierKindGloss,
+} from "./eeGloss";
+import { GlossText } from "./GlossText";
 
 interface Props {
   spec: SpecInput;
@@ -18,41 +33,73 @@ function replaceStage(arch: Architecture, id: string, next: FilterStage): Archit
   return { ...arch, stages: arch.stages.map((s) => (s.id === id ? next : s)) };
 }
 
+function PlaceholderBadge() {
+  return (
+    <span className="pill" title="Library part marked PLACEHOLDER — confirm MPN before ordering">
+      Placeholder
+    </span>
+  );
+}
+
+function ModeledPathBadge() {
+  return (
+    <span className="pill pill-info" title={IC_IDEAL_GLOSS}>
+      {MODELED_LOW_DROP_BADGE}
+    </span>
+  );
+}
+
 export function StageList({ spec, arch, onChange }: Props) {
   const add = (stage: FilterStage) => onChange(insertStage(arch, stage));
+  const rectifier =
+    library.diodes.find((p) => p.id === arch.rectifierId) ??
+    library.tubes.find((p) => p.id === arch.rectifierId) ??
+    library.icRectifiers.find((p) => p.id === arch.rectifierId);
+  const kindGloss = rectifier ? rectifierKindGloss(rectifier.kind) : null;
 
   return (
     <div className="panel">
       <h2>Rectifier &amp; stages</h2>
       <div className="field" style={{ marginBottom: 12 }}>
         <label htmlFor="rectifier">Rectifier</label>
-        <select
-          id="rectifier"
-          value={arch.rectifierId}
-          onChange={(e) => onChange({ ...arch, rectifierId: e.target.value })}
-        >
-          <optgroup label="Silicon bridge">
-            {library.diodes.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.mpn} — {p.description}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Tube / valve (FW-CT)">
-            {library.tubes.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.mpn} — {p.description}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="IC / active (ideal diode)">
-            {library.icRectifiers.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.mpn} — {p.description}
-              </option>
-            ))}
-          </optgroup>
-        </select>
+        <div className="stage-pick">
+          <select
+            id="rectifier"
+            value={arch.rectifierId}
+            title={kindGloss ?? undefined}
+            aria-describedby={kindGloss ? "rectifier-gloss" : undefined}
+            onChange={(e) => onChange({ ...arch, rectifierId: e.target.value })}
+          >
+            <optgroup label="Silicon bridge">
+              {library.diodes.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {rectifierOptionLabel(p)}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Tube / valve (FW-CT)">
+              {library.tubes.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {rectifierOptionLabel(p)}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="IC / active (ideal diode)">
+              {library.icRectifiers.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {rectifierOptionLabel(p)}
+                </option>
+              ))}
+            </optgroup>
+          </select>
+          {rectifier && isPlaceholderPart(rectifier) && <PlaceholderBadge />}
+          {rectifier && isModeledLowDropPath(rectifier) && <ModeledPathBadge />}
+        </div>
+        {kindGloss && (
+          <p id="rectifier-gloss" className="hint rectifier-hint">
+            <GlossText text={kindGloss} />
+          </p>
+        )}
       </div>
 
       <div className="stage-list">
@@ -108,57 +155,70 @@ function StageRow({
   onChange: (s: FilterStage) => void;
   onRemove: () => void;
 }) {
+  const part =
+    stage.type === "cap"
+      ? library.capacitors.find((p) => p.id === stage.partId)
+      : stage.type === "resistor"
+        ? library.resistors.find((p) => p.id === stage.partId)
+        : stage.type === "choke"
+          ? library.chokes.find((p) => p.id === stage.partId)
+          : library.regulators.find((p) => p.id === stage.partId);
+  const placeholder = part ? isPlaceholderPart(part) : false;
+
   return (
     <div className="stage">
       <div className="kind">{stage.type}</div>
-      {stage.type === "cap" && (
-        <select
-          value={stage.partId}
-          onChange={(e) => onChange(capStageFrom(e.target.value, stage.id))}
-        >
-          {library.capacitors.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.mpn} · {p.C_uF} µF / {p.Vdc_V} V
-            </option>
-          ))}
-        </select>
-      )}
-      {stage.type === "resistor" && (
-        <select
-          value={stage.partId}
-          onChange={(e) => onChange(resistorStageFrom(e.target.value, stage.id))}
-        >
-          {library.resistors.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.mpn} · {p.R_ohm} Ω / {p.Pmax_W} W
-            </option>
-          ))}
-        </select>
-      )}
-      {stage.type === "choke" && (
-        <select
-          value={stage.partId}
-          onChange={(e) => onChange(chokeStageFrom(e.target.value, stage.id))}
-        >
-          {library.chokes.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.mpn} · {p.L_mH >= 1000 ? `${p.L_mH / 1000} H` : `${p.L_mH} mH`} / {p.Imax_A} A
-            </option>
-          ))}
-        </select>
-      )}
-      {stage.type === "regulator" && (
-        <select
-          value={stage.partId}
-          onChange={(e) => onChange(regulatorStageFrom(e.target.value, spec.vout, stage.id))}
-        >
-          {library.regulators.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.mpn}
-            </option>
-          ))}
-        </select>
-      )}
+      <div className="stage-pick">
+        {stage.type === "cap" && (
+          <select
+            value={stage.partId}
+            onChange={(e) => onChange(capStageFrom(e.target.value, stage.id))}
+          >
+            {library.capacitors.map((p) => (
+              <option key={p.id} value={p.id}>
+                {capacitorOptionLabel(p)}
+              </option>
+            ))}
+          </select>
+        )}
+        {stage.type === "resistor" && (
+          <select
+            value={stage.partId}
+            onChange={(e) => onChange(resistorStageFrom(e.target.value, stage.id))}
+          >
+            {library.resistors.map((p) => (
+              <option key={p.id} value={p.id}>
+                {resistorOptionLabel(p)}
+              </option>
+            ))}
+          </select>
+        )}
+        {stage.type === "choke" && (
+          <select
+            value={stage.partId}
+            onChange={(e) => onChange(chokeStageFrom(e.target.value, stage.id))}
+          >
+            {library.chokes.map((p) => (
+              <option key={p.id} value={p.id}>
+                {chokeOptionLabel(p)}
+              </option>
+            ))}
+          </select>
+        )}
+        {stage.type === "regulator" && (
+          <select
+            value={stage.partId}
+            onChange={(e) => onChange(regulatorStageFrom(e.target.value, spec.vout, stage.id))}
+          >
+            {library.regulators.map((p) => (
+              <option key={p.id} value={p.id}>
+                {regulatorOptionLabel(p)}
+              </option>
+            ))}
+          </select>
+        )}
+        {placeholder && <PlaceholderBadge />}
+      </div>
       <div className="mono" style={{ fontSize: "0.78rem", color: "var(--muted)" }}>
         {summary(stage)}
       </div>
