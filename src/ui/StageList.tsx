@@ -15,6 +15,13 @@ import {
   regulatorOptionLabel,
   resistorOptionLabel,
 } from "./catalogLabels";
+import {
+  IC_IDEAL_GLOSS,
+  MODELED_LOW_DROP_BADGE,
+  isModeledLowDropPath,
+  rectifierKindGloss,
+} from "./eeGloss";
+import { GlossText } from "./GlossText";
 
 interface Props {
   spec: SpecInput;
@@ -34,12 +41,21 @@ function PlaceholderBadge() {
   );
 }
 
+function ModeledPathBadge() {
+  return (
+    <span className="pill pill-info" title={IC_IDEAL_GLOSS}>
+      {MODELED_LOW_DROP_BADGE}
+    </span>
+  );
+}
+
 export function StageList({ spec, arch, onChange }: Props) {
   const add = (stage: FilterStage) => onChange(insertStage(arch, stage));
   const rectifier =
     library.diodes.find((p) => p.id === arch.rectifierId) ??
     library.tubes.find((p) => p.id === arch.rectifierId) ??
     library.icRectifiers.find((p) => p.id === arch.rectifierId);
+  const kindGloss = rectifier ? rectifierKindGloss(rectifier.kind) : null;
 
   return (
     <div className="panel">
@@ -50,6 +66,8 @@ export function StageList({ spec, arch, onChange }: Props) {
           <select
             id="rectifier"
             value={arch.rectifierId}
+            title={kindGloss ?? undefined}
+            aria-describedby={kindGloss ? "rectifier-gloss" : undefined}
             onChange={(e) => onChange({ ...arch, rectifierId: e.target.value })}
           >
             <optgroup label="Silicon bridge">
@@ -75,7 +93,13 @@ export function StageList({ spec, arch, onChange }: Props) {
             </optgroup>
           </select>
           {rectifier && isPlaceholderPart(rectifier) && <PlaceholderBadge />}
+          {rectifier && isModeledLowDropPath(rectifier) && <ModeledPathBadge />}
         </div>
+        {kindGloss && (
+          <p id="rectifier-gloss" className="hint rectifier-hint">
+            <GlossText text={kindGloss} />
+          </p>
+        )}
       </div>
 
       <div className="stage-list">

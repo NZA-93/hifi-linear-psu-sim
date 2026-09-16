@@ -259,6 +259,17 @@
   white-space: nowrap;
 }
 
+.pill-info {
+  border-color: var(--info);
+  color: var(--info);
+  background: color-mix(in srgb, var(--info) 12%, transparent);
+}
+
+.rectifier-hint {
+  grid-column: auto;
+  margin: 8px 0 0;
+}
+
 .icon-btn {
   width: 32px;
   height: 32px;
@@ -387,6 +398,21 @@
   line-height: 1.4;
   margin: 10px 0 0;
   max-width: 72ch;
+}
+
+.gloss-foot {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 10px 0 0;
+  max-width: 72ch;
+}
+
+.warn-gloss {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  opacity: 0.95;
 }
 
 @media (max-width: 960px) {

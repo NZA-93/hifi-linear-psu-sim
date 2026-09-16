@@ -5,6 +5,7 @@ import type {
   RegulatorPart,
   ResistorPart,
 } from "../types";
+import { MODELED_LOW_DROP_BADGE, isModeledLowDropPath } from "./eeGloss";
 
 const PLACEHOLDER_RE = /placeholder/i;
 
@@ -50,5 +51,6 @@ export function regulatorOptionLabel(p: RegulatorPart): string {
 }
 
 export function rectifierOptionLabel(p: RectifierPart): string {
-  return withMpn(`${qty(p.iAvgMax_A)} A / ${qty(p.vRrm_V)} V`, p.mpn, isPlaceholderPart(p));
+  const base = withMpn(`${qty(p.iAvgMax_A)} A / ${qty(p.vRrm_V)} V`, p.mpn, isPlaceholderPart(p));
+  return isModeledLowDropPath(p) ? `${base} · ${MODELED_LOW_DROP_BADGE}` : base;
 }

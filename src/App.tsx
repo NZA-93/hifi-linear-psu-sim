@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Architecture, SpecInput } from "./types";
 import { defaultSpec, recommend, simulate } from "./sim";
+import { findRectifier } from "./library";
 import { SpecForm } from "./ui/SpecForm";
 import { StageList } from "./ui/StageList";
 import { BlockDiagram } from "./ui/BlockDiagram";
@@ -16,6 +17,7 @@ export default function App() {
   const [arch, setArch] = useState<Architecture>(initialArch);
 
   const result = useMemo(() => simulate(spec, arch), [spec, arch]);
+  const rectifier = findRectifier(arch.rectifierId);
 
   return (
     <div className="app">
@@ -39,6 +41,7 @@ export default function App() {
       <div className="layout">
         <SpecForm
           spec={spec}
+          rectifierKind={rectifier.kind}
           onChange={setSpec}
           onRecommend={() => setArch(recommend(spec, arch.rectifierId))}
         />

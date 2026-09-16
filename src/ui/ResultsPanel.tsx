@@ -2,6 +2,8 @@ import type { Architecture, SimResult, SpecInput } from "../types";
 import { fmt, fmtMv } from "./format";
 import { findRectifier } from "../library";
 import { rippleMeetsTarget, rippleVsTargetLabel } from "./rippleCopy";
+import { DROPOUT_GLOSS, PEAK_CLAMP_GLOSS, isPeakClampWarning, secondaryVacGloss } from "./eeGloss";
+import { GlossText } from "./GlossText";
 
 export function ResultsPanel({
   spec,
@@ -15,13 +17,16 @@ export function ResultsPanel({
   const { metrics, analytic } = result;
   const rippleOk = rippleMeetsTarget(metrics.rippleOutPp, spec);
   const headTone = metrics.inRegulation ? "good" : "bad";
-  const tubeRectifier = findRectifier(arch.rectifierId).kind === "tube-fwct";
+  const rectifier = findRectifier(arch.rectifierId);
+  const tubeRectifier = rectifier.kind === "tube-fwct";
+  const hasRegulator = arch.stages.some((s) => s.type === "regulator");
+  const vsecTitle = secondaryVacGloss(rectifier.kind) ?? undefined;
 
   return (
     <div className="panel">
       <h2>Simulation</h2>
       <div className="metrics">
-        <div className="metric">
+        <div className="metric" title={vsecTitle}>
           <span className="k">Vsec used</span>
           <span className="v">{fmt(metrics.vsecUsed, 2, "Vrms")}</span>
         </div>
@@ -38,7 +43,7 @@ export function ResultsPanel({
           <span className="k">Vout avg</span>
           <span className="v">{fmt(metrics.voutAvg, 2, "V")}</span>
         </div>
-        <div className={`metric ${headTone}`}>
+        <div className={`metric ${headTone}`} title={hasRegulator ? DROPOUT_GLOSS : undefined}>
           <span className="k">Headroom (valley)</span>
           <span className="v">{fmt(metrics.headroomMin, 2, "V")}</span>
         </div>
@@ -56,6 +61,11 @@ export function ResultsPanel({
           {tubeRectifier && <span className="metric-note">excludes heater</span>}
         </div>
       </div>
+      {hasRegulator && (
+        <p className="gloss-foot">
+          Dropout {fmt(metrics.dropout, 2, "V")}. <GlossText text={DROPOUT_GLOSS} />
+        </p>
+      )}
       <p className="analytic-note">
         Hand estimate (not the time-domain sim): Vpeak {fmt(analytic.vPeak, 2, "V")}, rectifier drop{" "}
         {fmt(analytic.vfTotal, 2, "V")}, reservoir ripple {fmtMv(analytic.reservoirRipplePp)}pp,
@@ -68,6 +78,11 @@ export function ResultsPanel({
           {metrics.warnings.map((w, i) => (
             <div key={i} className={`warn-item ${w.level}`}>
               {w.message}
+              {isPeakClampWarning(w) && (
+                <div className="warn-gloss">
+                  <GlossText text={PEAK_CLAMP_GLOSS} />
+                </div>
+              )}
             </div>
           ))}
         </div>

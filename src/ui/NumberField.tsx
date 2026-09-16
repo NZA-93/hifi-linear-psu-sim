@@ -8,6 +8,7 @@ interface Common {
   /** Default `any` so round values like 1 / 0.1 / 0.5 are not rejected by HTML5 step. */
   step?: string;
   placeholder?: string;
+  title?: string;
 }
 
 type Props = Common &
@@ -22,7 +23,7 @@ type Props = Common &
  * to a finite value on blur.
  */
 export function NumberField(props: Props) {
-  const { id, value, min, max, step = "any", placeholder, optional = false, onChange } = props;
+  const { id, value, min, max, step = "any", placeholder, title, optional = false, onChange } = props;
   const committed = formatCommitted(value);
   const [draft, setDraft] = useState(committed);
   const [focused, setFocused] = useState(false);
@@ -49,6 +50,7 @@ export function NumberField(props: Props) {
       min={min}
       max={max}
       placeholder={placeholder}
+      title={title}
       value={focused ? draft : committed}
       onFocus={() => setFocused(true)}
       onChange={(e) => {

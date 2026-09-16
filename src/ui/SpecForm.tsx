@@ -1,14 +1,17 @@
-import type { SpecInput } from "../types";
+import type { RectifierKind, SpecInput } from "../types";
 import { NumberField } from "./NumberField";
+import { secondaryVacGloss } from "./eeGloss";
 
 interface Props {
   spec: SpecInput;
+  rectifierKind: RectifierKind;
   onChange: (next: SpecInput) => void;
   onRecommend: () => void;
 }
 
-export function SpecForm({ spec, onChange, onRecommend }: Props) {
+export function SpecForm({ spec, rectifierKind, onChange, onRecommend }: Props) {
   const set = (patch: Partial<SpecInput>) => onChange({ ...spec, ...patch });
+  const vsecGloss = secondaryVacGloss(rectifierKind);
 
   return (
     <form
@@ -91,6 +94,7 @@ export function SpecForm({ spec, onChange, onRecommend }: Props) {
               optional
               min={0}
               placeholder="auto"
+              title={vsecGloss ?? undefined}
               value={spec.vsecRms}
               onChange={(vsecRms) => set({ vsecRms })}
             />
@@ -150,7 +154,6 @@ export function SpecForm({ spec, onChange, onRecommend }: Props) {
               <option value="no">Unregulated raw DC</option>
             </select>
           </div>
-          {/* TODO(circuit-designer): tube EE gloss for CT / RMS-per-anode / clamp / dropout — do not invent claims. */}
           <p className="hint">
             Leave secondary blank to auto-pick a common VAC. Turns ratio helper: Vsec = Vmains ×
             Ns/Np.
