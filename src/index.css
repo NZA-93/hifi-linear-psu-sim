@@ -148,6 +148,181 @@ code {
   color: var(--gold);
 }
 
+.panel-kicker.pass {
+  color: #7dcea0;
+}
+
+.panel-kicker.fail {
+  color: #f0b4b4;
+}
+
+.approx-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.65rem;
+}
+
+select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  font-family: var(--mono);
+  color: inherit;
+}
+
+select:focus {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.segment-fieldset {
+  border: 0;
+  margin: 0 0 0.65rem;
+  padding: 0;
+}
+
+.segment-fieldset legend {
+  padding: 0;
+  margin-bottom: 0.35rem;
+}
+
+.enable-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 0.55rem;
+  cursor: pointer;
+}
+
+.enable-row input {
+  margin-top: 0.2rem;
+  accent-color: var(--gold);
+}
+
+.enable-row em {
+  display: block;
+  font-style: normal;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.stage-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.7rem;
+  margin-bottom: 0.65rem;
+}
+
+.stage-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.preset-select {
+  min-width: min(100%, 280px);
+  flex: 1;
+}
+
+.preset-desc {
+  margin-top: 0.65rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.dac-pack {
+  margin-top: 0.85rem;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.chip {
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.chip.selected,
+.chip:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.badge {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  align-self: center;
+}
+
+.badge-neg {
+  border: 1px solid var(--gold);
+  color: var(--gold);
+}
+
+.subhead {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0.9rem 0 0.4rem;
+}
+
+.suggest-list,
+.formula-details ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.suggest-list span {
+  display: block;
+}
+
+.formula-details {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.formula-details summary {
+  cursor: pointer;
+  color: var(--gold);
+}
+
+.library-groups {
+  display: grid;
+  gap: 0.85rem;
+}
+
 .field-stack {
   display: grid;
   gap: 0.75rem;
@@ -206,7 +381,7 @@ code {
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   padding: 0.45rem 0.3rem;
-  text-transform: lowercase;
+  text-transform: none;
   font-family: var(--mono);
   font-size: 0.85rem;
   cursor: pointer;

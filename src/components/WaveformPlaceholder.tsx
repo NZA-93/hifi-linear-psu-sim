@@ -1,4 +1,4 @@
-/** Static EXAMPLE waveform. Not produced by a simulation. */
+/** Illustrative waveform only. Metrics come from closed-form approximations, not this drawing. */
 export function WaveformPlaceholder() {
   const width = 720
   const height = 160
@@ -16,14 +16,14 @@ export function WaveformPlaceholder() {
     <section className="panel panel-full" aria-labelledby="wave-heading">
       <header className="panel-header">
         <h2 id="wave-heading">Time-domain waveform</h2>
-        <p className="panel-kicker">EXAMPLE — not a real simulation</p>
+        <p className="panel-kicker">EXAMPLE — not a simulation result</p>
       </header>
       <div className="chart-frame">
         <svg
           className="chart"
           viewBox={`0 0 ${width} ${height}`}
           role="img"
-          aria-label="Placeholder sine wave labeled as an example, not a simulation result"
+          aria-label="Placeholder sine wave. Not produced by the linear PSU approximations."
         >
           <rect x="0" y="0" width={width} height={height} fill="transparent" />
           {[0.25, 0.5, 0.75].map((frac) => (

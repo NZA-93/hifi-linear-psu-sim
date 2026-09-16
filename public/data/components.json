@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "diodes": [
+    {
+      "id": "1n4007",
+      "name": "1N4007",
+      "Vf": 0.9,
+      "If_max": 1.0,
+      "Vrrrm": 1000
+    }
+  ],
+  "capacitors": [
+    {
+      "id": "cap-470u-25v",
+      "name": "470 µF 25 V electrolytic",
+      "C_uF": 470,
+      "V_rated": 25,
+      "ESR_ohm": 0.18,
+      "type": "electrolytic"
+    },
+    {
+      "id": "cap-1000u-35v",
+      "name": "1000 µF 35 V electrolytic",
+      "C_uF": 1000,
+      "V_rated": 35,
+      "ESR_ohm": 0.12,
+      "type": "electrolytic"
+    },
+    {
+      "id": "cap-2200u-35v",
+      "name": "2200 µF 35 V electrolytic",
+      "C_uF": 2200,
+      "V_rated": 35,
+      "ESR_ohm": 0.08,
+      "type": "electrolytic"
+    },
+    {
+      "id": "cap-4700u-35v",
+      "name": "4700 µF 35 V electrolytic",
+      "C_uF": 4700,
+      "V_rated": 35,
+      "ESR_ohm": 0.05,
+      "type": "electrolytic"
+    },
+    {
+      "id": "cap-10000u-35v",
+      "name": "10000 µF 35 V electrolytic",
+      "C_uF": 10000,
+      "V_rated": 35,
+      "ESR_ohm": 0.04,
+      "type": "electrolytic"
+    }
+  ],
+  "resistors": [
+    {
+      "id": "r-2.2-3w",
+      "name": "2.2 Ω 3 W",
+      "R_ohm": 2.2,
+      "P_max_W": 3
+    },
+    {
+      "id": "r-4.7-3w",
+      "name": "4.7 Ω 3 W",
+      "R_ohm": 4.7,
+      "P_max_W": 3
+    },
+    {
+      "id": "r-10-3w",
+      "name": "10 Ω 3 W",
+      "R_ohm": 10,
+      "P_max_W": 3
+    },
+    {
+      "id": "r-22-5w",
+      "name": "22 Ω 5 W",
+      "R_ohm": 22,
+      "P_max_W": 5
+    }
+  ],
+  "chokes": [
+    {
+      "id": "choke-placeholder-1h",
+      "name": "PLACEHOLDER 1 H / 150 mA choke",
+      "L_H": 1,
+      "I_sat_mA": 150,
+      "DCR_ohm": 20,
+      "notes": "PLACEHOLDER — not a catalog part. No fake part number. Circuit Designer can replace with a real choke."
+    }
+  ],
+  "regulators": [
+    {
+      "id": "lm317",
+      "name": "LM317",
+      "type": "series_IC",
+      "Vdropout": 3.0,
+      "I_max_A": 1.5,
+      "PSRR_dB_120Hz": 65,
+      "Vref": 1.25
+    },
+    {
+      "id": "7805",
+      "name": "7805",
+      "type": "series_IC",
+      "Vdropout": 2.0,
+      "I_max_A": 1.0,
+      "PSRR_dB_120Hz": 60,
+      "Vref": null,
+      "notes": "Fixed 5 V. Vref N/A. PSRR_dB_120Hz is a placeholder order-of-magnitude, not a datasheet guarantee."
+    },
+    {
+      "id": "series_discrete_vbe_stub",
+      "name": "PLACEHOLDER series discrete (Vbe/dropout stub)",
+      "type": "series_discrete",
+      "Vdropout": 1.4,
+      "I_max_A": 1.0,
+      "PSRR_dB_120Hz": 20,
+      "Vref": null,
+      "notes": "PLACEHOLDER — not a catalog part. Simple ~2×Vbe dropout stub until Circuit Designer supplies a discrete model."
+    }
+  ]
+}
