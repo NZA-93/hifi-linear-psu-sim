@@ -169,22 +169,22 @@ describe("electrical honesty", () => {
     const arch = {
       rectifierId: "kbu8m",
       stages: [
-        capStageFrom("ukw1v472mhd", "c1"),
+        capStageFrom("zlh-3300-25", "c1"),
         resistorStageFrom("20j10r", "r1"),
         capStageFrom("ukw1v472mhd", "c2"),
       ],
     };
     const { metrics } = simulate(spec, arch);
-    expect(metrics.vFirstCapMax).toBeGreaterThan(35);
+    expect(metrics.vFirstCapMax).toBeGreaterThan(25);
+    expect(metrics.vPreRegMax).toBeLessThan(25);
     expect(metrics.vPreRegMax).toBeLessThan(metrics.vFirstCapMax - 4);
-    expect(metrics.vPreRegMax).toBeLessThan(35);
     expect(
       metrics.warnings.some(
         (w) =>
           w.level === "error" &&
           /First capacitor/.test(w.message) &&
           /first-node peak/.test(w.message) &&
-          /ukw1v472mhd/.test(w.message),
+          /zlh-3300-25/.test(w.message),
       ),
     ).toBe(true);
   });
