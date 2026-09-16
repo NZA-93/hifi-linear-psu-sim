@@ -45,7 +45,7 @@ export default function App() {
         <div className="stack">
           <BlockDiagram arch={arch} />
           <StageList spec={spec} arch={arch} onChange={setArch} />
-          <ResultsPanel spec={spec} result={result} />
+          <ResultsPanel spec={spec} arch={arch} result={result} />
           <WaveformPlot waveform={result.waveform} />
         </div>
       </div>

@@ -113,6 +113,41 @@
   margin: 2px 0 4px;
 }
 
+.advanced {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px 10px;
+  background: var(--bg-elev);
+}
+
+.advanced > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  list-style: none;
+}
+
+.advanced > summary::-webkit-details-marker {
+  display: none;
+}
+
+.advanced > summary::before {
+  content: "▸ ";
+  color: var(--accent);
+}
+
+.advanced[open] > summary::before {
+  content: "▾ ";
+}
+
+.advanced[open] > summary {
+  margin-bottom: 10px;
+}
+
 .row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -197,6 +232,33 @@
   width: 100%;
 }
 
+.stage-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stage-pick select {
+  flex: 1;
+  min-width: 0;
+}
+
+.pill {
+  display: inline-block;
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  white-space: nowrap;
+}
+
 .icon-btn {
   width: 32px;
   height: 32px;
@@ -246,6 +308,23 @@
 
 .metric.bad .v {
   color: var(--bad);
+}
+
+.metric-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.metric.warn .metric-note {
+  color: var(--warn);
+}
+
+.metric.good .metric-note {
+  color: var(--good);
 }
 
 .warnings {
@@ -300,6 +379,14 @@
   color: var(--faint);
   font-size: 0.8rem;
   margin: 8px 0 0;
+}
+
+.analytic-note {
+  color: var(--faint);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  margin: 10px 0 0;
+  max-width: 72ch;
 }
 
 @media (max-width: 960px) {

@@ -1,12 +1,21 @@
-import type { SimResult, SpecInput } from "../types";
+import type { Architecture, SimResult, SpecInput } from "../types";
 import { fmt, fmtMv } from "./format";
-import { rippleTargetVolts } from "../sim/analytics";
+import { findRectifier } from "../library";
+import { rippleMeetsTarget, rippleVsTargetLabel } from "./rippleCopy";
 
-export function ResultsPanel({ spec, result }: { spec: SpecInput; result: SimResult }) {
+export function ResultsPanel({
+  spec,
+  arch,
+  result,
+}: {
+  spec: SpecInput;
+  arch: Architecture;
+  result: SimResult;
+}) {
   const { metrics, analytic } = result;
-  const target = rippleTargetVolts(spec);
-  const rippleOk = metrics.rippleOutPp <= target * 1.15;
+  const rippleOk = rippleMeetsTarget(metrics.rippleOutPp, spec);
   const headTone = metrics.inRegulation ? "good" : "bad";
+  const tubeRectifier = findRectifier(arch.rectifierId).kind === "tube-fwct";
 
   return (
     <div className="panel">
@@ -23,6 +32,7 @@ export function ResultsPanel({ spec, result }: { spec: SpecInput; result: SimRes
         <div className={`metric ${rippleOk ? "good" : "warn"}`}>
           <span className="k">Output ripple</span>
           <span className="v">{fmtMv(metrics.rippleOutPp)}pp</span>
+          <span className="metric-note">{rippleVsTargetLabel(metrics.rippleOutPp, spec)}</span>
         </div>
         <div className="metric">
           <span className="k">Vout avg</span>
@@ -43,10 +53,11 @@ export function ResultsPanel({ spec, result }: { spec: SpecInput; result: SimRes
         <div className="metric">
           <span className="k">Efficiency (rough)</span>
           <span className="v">{fmt(metrics.efficiency * 100, 1, "%")}</span>
+          {tubeRectifier && <span className="metric-note">excludes heater</span>}
         </div>
       </div>
-      <p className="fine">
-        Analytic check: Vpeak {fmt(analytic.vPeak, 2, "V")}, rectifier drop{" "}
+      <p className="analytic-note">
+        Hand estimate (not the time-domain sim): Vpeak {fmt(analytic.vPeak, 2, "V")}, rectifier drop{" "}
         {fmt(analytic.vfTotal, 2, "V")}, reservoir ripple {fmtMv(analytic.reservoirRipplePp)}pp,
         series IR {fmt(analytic.seriesDrop, 2, "V")}. Dropout modelled as{" "}
         {fmt(metrics.dropout, 2, "V")}. Raw valley {fmt(metrics.vPreRegMin, 2, "V")} / peak{" "}
